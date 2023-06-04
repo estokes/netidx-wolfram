@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# library link doesn't seem to do a great job detecting the Mathematica install
+export WSTP_COMPILER_ADDITIONS="/usr/local/Wolfram/Mathematica/13.2/SystemFiles/Links/WSTP/DeveloperKit/Linux-x86-64/CompilerAdditions"
+export WOLFRAM_APP_DIRECTORY="/usr/local/Wolfram/Mathematica/13.2"
+
+cargo build $@

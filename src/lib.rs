@@ -13,7 +13,12 @@ use wolfram_library_link::{self as wll, AsyncTaskObject, DataStore};
 
 wll::generate_loader!(load_netidx_functions);
 
-static TO: OnceCell<mpsc::UnboundedSender<Path>> = OnceCell::new();
+enum To {
+    Subscribe(Path),
+    Unsubscribe(Path)
+}
+
+static TO: OnceCell<mpsc::UnboundedSender<To>> = OnceCell::new();
 
 fn add_netidx_val(ds: &mut DataStore, v: &Value) {
     match v {
@@ -64,13 +69,20 @@ async fn run_subscriber(task: AsyncTaskObject) {
     loop {
         #[rustfmt::skip]
 	select_biased! {
-            path = rx.select_next_some() => {
-                if let Entry::Vacant(e) = by_path.entry(path.clone()) {
-		    let sub = subscriber.subscribe(path.clone());
-		    sub.updates(UpdatesFlags::BEGIN_WITH_LAST, tx_up.clone());
-		    e.insert(sub.id());
-		    by_subid.insert(sub.id(), (path, sub));
-                }
+            to = rx.select_next_some() => match to {
+		To::Subscribe(path) => {
+                    if let Entry::Vacant(e) = by_path.entry(path.clone()) {
+			let sub = subscriber.subscribe(path.clone());
+			sub.updates(UpdatesFlags::BEGIN_WITH_LAST, tx_up.clone());
+			e.insert(sub.id());
+			by_subid.insert(sub.id(), (path, sub));
+                    }
+		}
+		To::Unsubscribe(path) => {
+		    if let Some(id) = by_path.remove(&path) {
+			by_subid.remove(&id);
+		    }
+		}
             },
             mut batch = rx_up.select_next_some() => {
 		let mut res = DataStore::new();
@@ -106,6 +118,14 @@ fn start_netidx_subscriber() -> i64 {
 fn subscribe(path: String) {
     TO.get()
         .expect("you must initialize netidx")
-        .unbounded_send(Path::from(path))
+        .unbounded_send(To::Subscribe(Path::from(path)))
+        .expect("failed to subscribe");
+}
+
+#[wll::export]
+fn unsubscribe(path: String) {
+    TO.get()
+        .expect("you must initialize netidx")
+        .unbounded_send(To::Unsubscribe(Path::from(path)))
         .expect("failed to subscribe");
 }
