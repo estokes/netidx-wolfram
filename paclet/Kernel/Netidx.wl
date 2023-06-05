@@ -31,27 +31,30 @@ callbackId = 0;
 
 subscriptions = <||>;
 
-subscriptionHandler[taskObject_, "update", updates_] := Function[l,
-  #[l[[2]]]& /@ subscriptions[l[[1]]]
-] /@ updates;
+subscriptionHandler[taskObject_, "update", updates_] := Map[
+	Function[l, Map[
+		Function[f, f[l[[2]]]], 
+		subscriptions[l[[1]]]]
+	], 
+	updates
+];
 
-subscriptionTask = Internal`CreateAsynchronousTask[LibraryFunctionLoad[
-  "libnetidx_wolfram", "start_netidx_subscriber", {}, Integer], {}, netidxHandler
-  ];
+subscriptionTask = Internal`CreateAsynchronousTask[
+	LibraryFunctionLoad["libnetidx_wolfram", "start_netidx_subscriber", {}, Integer], 
+	{}, 
+	subscriptionHandler
+];
 
-doSubscribe = LibraryFunctionLoad["libnetidx_wolfram", "subscribe", {
-  String}, "Void"];
-
-doUnsubscribe = LibraryFunctionLoad["libnetidx_wolfram", "unsubscribe",
-   {String}, "Void"]
+doSubscribe = LibraryFunctionLoad["libnetidx_wolfram", "subscribe", {String}, "Void"];
+doUnsubscribe = LibraryFunctionLoad["libnetidx_wolfram", "unsubscribe", {String}, "Void"];
 
 Subscribe[path_, f_] := Module[{id, s},
   id = callbackId;
   callbackId = callbackId + 1;
-  s = subscriptions[path];
-  s = If[MissingQ[s], subscriptions[path] = <||>, s];
-  s[id] = f;
-  doSubscribe (path);
+  If[MissingQ[subscriptions[path]], subscriptions[path] = <||>];
+  subscriptions[path][id] = Echo[f];
+  Echo[subscriptions];
+  doSubscribe[path];
   id
 ]
 
@@ -60,11 +63,10 @@ Unsubscribe[path_, id_] := Module[{p},
   If[!MissingQ[p],
     If[!MissingQ[p[id]],
       Module[{},
-        KeyDropFrom[p, id];
-        If[p == <||>,
-          Module[{},
-            KeyDropFrom[subscriptions, path]; doUnsubscribe[path];
-          ]
+        subscriptions[path] = KeyDropFrom[p, id];
+        If[subscriptions[path] == <||>, Module[{}, 
+          KeyDropFrom[subscriptions, path]; 
+          doUnsubscribe[path];]
         ]
       ]
     ]

@@ -90,6 +90,7 @@ async fn run_subscriber(task: AsyncTaskObject) {
 		    match ev {
 			Event::Unsubscribed => (),
 			Event::Update(v) => {
+			    eprintln!("update for {:?}, {}", id, v);
 			    let mut up = DataStore::new();
 			    up.add_str(&*by_subid[&id].0);
 			    add_netidx_val(&mut up, &v);
@@ -106,6 +107,7 @@ async fn run_subscriber(task: AsyncTaskObject) {
 
 #[wll::export]
 fn start_netidx_subscriber() -> i64 {
+    eprintln!("starting netidx-wolfram subscriber");
     let task = AsyncTaskObject::spawn_with_thread(|task: AsyncTaskObject| {
         let mut _rt = Runtime::new()
             .expect("could not create runtime")
@@ -116,6 +118,7 @@ fn start_netidx_subscriber() -> i64 {
 
 #[wll::export]
 fn subscribe(path: String) {
+    eprintln!("subscribing to {}", path);
     TO.get()
         .expect("you must initialize netidx")
         .unbounded_send(To::Subscribe(Path::from(path)))
@@ -124,6 +127,7 @@ fn subscribe(path: String) {
 
 #[wll::export]
 fn unsubscribe(path: String) {
+    eprintln!("unsubscribing from {}", path);
     TO.get()
         .expect("you must initialize netidx")
         .unbounded_send(To::Unsubscribe(Path::from(path)))
