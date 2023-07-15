@@ -39,7 +39,7 @@ subscriptionHandler[taskObject_, "update", updates_] := Map[
 	updates
 ];
 
-dllPath = FileNameJoin[{$UserBaseDirectory, "ApplicationData", "Paclets", "PacletName", 
+dllPath = FileNameJoin[{$UserBaseDirectory, "ApplicationData", "Paclets", "Netidx", 
      "LibraryResources", $SystemID, "libnetidx_wolfram"}];
 
 subscriptionTask = Internal`CreateAsynchronousTask[
