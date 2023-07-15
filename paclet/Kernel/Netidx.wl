@@ -52,8 +52,7 @@ Subscribe[path_, f_] := Module[{id, s},
   id = callbackId;
   callbackId = callbackId + 1;
   If[MissingQ[subscriptions[path]], subscriptions[path] = <||>];
-  subscriptions[path][id] = Echo[f];
-  Echo[subscriptions];
+  subscriptions[path][id] = f;
   doSubscribe[path];
   id
 ]
