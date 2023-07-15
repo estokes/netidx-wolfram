@@ -39,14 +39,17 @@ subscriptionHandler[taskObject_, "update", updates_] := Map[
 	updates
 ];
 
+dllPath = FileNameJoin[{$UserBaseDirectory, "ApplicationData", "Paclets", "PacletName", 
+     "LibraryResources", $SystemID, "libnetidx_wolfram"}];
+
 subscriptionTask = Internal`CreateAsynchronousTask[
-	LibraryFunctionLoad["libnetidx_wolfram", "start_netidx_subscriber", {}, Integer], 
+	LibraryFunctionLoad[dllPath, "start_netidx_subscriber", {}, Integer], 
 	{}, 
 	subscriptionHandler
 ];
 
-doSubscribe = LibraryFunctionLoad["libnetidx_wolfram", "subscribe", {String}, "Void"];
-doUnsubscribe = LibraryFunctionLoad["libnetidx_wolfram", "unsubscribe", {String}, "Void"];
+doSubscribe = LibraryFunctionLoad[dllPath, "subscribe", {String}, "Void"];
+doUnsubscribe = LibraryFunctionLoad[dllPath, "unsubscribe", {String}, "Void"];
 
 Subscribe[path_, f_] := Module[{id, s},
   id = callbackId;
